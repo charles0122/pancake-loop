@@ -35,4 +35,7 @@ public class DialogSystemTest : PersistentMonoSingleton<DialogSystemTest>
     {
         _dialogBox.Open(Next);
     }
+
+    /// <summary>点单台词数量（datas 末尾两条固定是成功/失败台词）。</summary>
+    public int DefaultLineCount => datas != null ? Mathf.Max(0, datas.Count - 2) : 0;
 }

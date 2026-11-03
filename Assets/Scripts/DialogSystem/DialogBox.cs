@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using ByteLoop.DialogSystem;
 using System;
 using ByteLoop.Manager;
+using ByteLoop.Tool;
 
 public class DialogBox : MonoBehaviour
 {
@@ -29,6 +30,48 @@ public class DialogBox : MonoBehaviour
     private void Awake()
     {
         _content.OnFinished = PrintFinished;
+        WireClickAdvance();
+    }
+
+    // 点击对话框任意处：打字中=立即显示全文；打完=推进下一句点单台词
+    private void WireClickAdvance()
+    {
+        var img = GetComponent<Image>();
+        if (img != null && GetComponent<Button>() == null)
+        {
+            var btn = gameObject.AddComponent<Button>();
+            btn.transition = Selectable.Transition.None;
+            btn.onClick.AddListener(HandleAdvanceClick);
+        }
+        if (_nextCursor != null && _nextCursor.GetComponent<Button>() == null)
+        {
+            var cursorImg = _nextCursor.GetComponent<Image>();
+            if (cursorImg != null)
+            {
+                var cursorBtn = _nextCursor.gameObject.AddComponent<Button>();
+                cursorBtn.transition = Selectable.Transition.None;
+                cursorBtn.onClick.AddListener(HandleAdvanceClick);
+            }
+        }
+    }
+
+    private void HandleAdvanceClick()
+    {
+        if (CanQuickShow)
+        {
+            _content.QuickShowRemaining();
+            return;
+        }
+        if (!CanNext) return;
+
+        // 只在还有点单台词时点击推进；结果台词（成功/失败）由 B/A 键驱动，避免剧透
+        var dst = DialogSystemTest.Instance;
+        if (dst != null && dst._index > 0 && dst._index < dst.DefaultLineCount)
+        {
+            _interactable = false;
+            _nextCursor.Fade(0, 0.2f, null);
+            OnNext?.Invoke(false);
+        }
     }
     // 打印结束
     private void PrintFinished()
@@ -42,7 +85,11 @@ public class DialogBox : MonoBehaviour
         {
             _interactable = true;
             _printFinished = true;
-            _nextCursor.Fade(1, 0.2f, null);
+            _nextCursor.Fade(1, 0.2f, () =>
+            {
+                // 出现时弹一下，提示可点击
+                Juice.PunchScale(_nextCursor.transform, 0.3f, 0.45f);
+            });
         }
     }
 

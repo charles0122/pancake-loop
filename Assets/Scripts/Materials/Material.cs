@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using ByteLoop.Manager;
+using ByteLoop.Tool;
 using UnityEngine;
 using System;
 
@@ -20,6 +21,8 @@ public class Material : MonoBehaviour
 
     public MaterialType Type => _type;
 
+    private Vector3 _baseScale = Vector3.one;
+
     private void Start()
     {
         targetTrans = GameObject.FindGameObjectWithTag("MarterialParent").transform;
@@ -28,6 +31,7 @@ public class Material : MonoBehaviour
             _spriteRenderer.sprite = defaultSprite;
         }
         startPos = transform.position;
+        _baseScale = transform.localScale;
     }
     private void OnMouseDrag()
     {
@@ -46,34 +50,47 @@ public class Material : MonoBehaviour
         }
     }
 
+    private void OnMouseDown()
+    {
+        // 拖起任意配料时高亮锅的落点
+        if (!isFinished && GameManager.Instance.InputAllowed)
+        {
+            PanPresenter.Ensure().OnDragStart();
+        }
+    }
+
     private void OnMouseUp()
     {
 
         if (!isFinished)
         {
+            PanPresenter.Ensure().OnDragEnd();
             // 距离锅中心的多少距离  3f   可以改成原料属性
             if (Mathf.Abs(transform.position.x - targetTrans.position.x) <= 3f &&
             Mathf.Abs(transform.position.y - targetTrans.position.y) <= 3f)
             {
                 transform.position = new Vector2(transform.position.x, transform.position.y);
                 isFinished = true;
+                _collider2D.enabled = false; // 落锅后不再响应鼠标
                 StartCoroutine(InstantiateMaterial(transform.position));
             }
             else
             {
-                transform.position = startPos;
+                // 没扔进锅：抖一下再滑回原位
+                Juice.Shake(transform, 0.25f, 0.2f);
+                Juice.DelayCall(0.22f, () => Juice.TweenPosition(transform, startPos, 0.3f, Juice.Ease.Back));
             }
         }
     }
     private void OnMouseEnter()
     {
-        if(!isFinished)
-        transform.localScale += Vector3.one * 0.07f;
+        if(!isFinished && GameManager.Instance.InputAllowed)
+            Juice.TweenScale(transform, _baseScale * 1.08f, 0.12f);
     }
     private void OnMouseExit()
     {
         if(!isFinished)
-        transform.localScale -= Vector3.one * 0.07f;
+            Juice.TweenScale(transform, _baseScale, 0.12f);
     }
 
     // private void OnMouseDown()
@@ -97,12 +114,21 @@ public class Material : MonoBehaviour
         // Debug.Log("添加原材料"+_type);
         // GameObject GO = Instantiate(this.gameObject, pos, Quaternion.identity);
         this.transform.SetParent(GameObject.FindGameObjectWithTag("MarterialParent").transform);
+        if (ByteLoop.UI.OrderPanel.Instance != null)
+        {
+            ByteLoop.UI.OrderPanel.Instance.Refresh();
+        }
         // this.gameObject.SetActive(false);
+
+        // 通知锅视觉层：落位/弹跳/倒面糊等
+        PanPresenter.Ensure().OnMaterialDropped(this);
 
         // Timer
         GameObject GO = Instantiate(GameManager.Instance.TimerGO);
         GO.GetComponent<Timer>().TotalTime = _needTime;
         GO.GetComponent<Timer>().Start = true;
+        // 滑条移到锅上方
+        GO.transform.position = PanPresenter.Ensure().CookUiPos;
 
         yield return new WaitForSeconds(_needTime);
         // 检查是否

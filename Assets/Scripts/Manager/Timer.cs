@@ -10,14 +10,22 @@ public class Timer : MonoBehaviour
 {
 
     [SerializeField] private Slider slider;
-    [SerializeField] public bool Start { get; set; } = false;
+    [field: SerializeField] public bool Start { get; set; } = false;
 
-    [SerializeField] public float TotalTime { get; set; } = 10f;
+    [field: SerializeField] public float TotalTime { get; set; } = 10f;
     [SerializeField] private float startTime = 0;
+
+    private bool _tickPlayed;
 
     private void Awake()
     {
         GameManager.Instance.InputAllowed = false;
+        // 进度条染成金色，和煎饼的视觉呼应
+        if (slider != null && slider.fillRect != null)
+        {
+            var fill = slider.fillRect.GetComponent<Image>();
+            if (fill != null) fill.color = new Color(1f, 0.84f, 0.35f);
+        }
     }
 
     private void Update()
@@ -26,6 +34,12 @@ public class Timer : MonoBehaviour
         {
             slider.value = startTime / TotalTime;
             startTime += Time.deltaTime;
+            // 快完成时滴答提示
+            if (!_tickPlayed && TotalTime - startTime <= 0.6f)
+            {
+                _tickPlayed = true;
+                AudioManager.Instance.PlaySfx(SfxType.Clock, 0.6f);
+            }
         }
 
         if (startTime > TotalTime)

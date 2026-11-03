@@ -34,7 +34,13 @@ public class UIManager : PersistentMonoSingleton<UIManager>
     {
         if(MainMenu!=null)
         MainMenu.SetActive(state);
-        
+
+        // 回主菜单时隐藏游戏内 HUD
+        if (state && ByteLoop.Manager.GameManager.Instance != null)
+        {
+            ByteLoop.Manager.GameManager.Instance.HideGameHud();
+        }
+
         // if(state){
         //     AudioManager.Instance.PlayBGM(Music.MainMenuBGM,true);
         // }else{

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using ByteLoop.Tool;
+using ByteLoop.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 namespace ByteLoop.Manager
@@ -73,6 +74,7 @@ namespace ByteLoop.Manager
         {
             yield return new WaitForSeconds(2f);
             // yield return ;// 过场动画
+            HideGameHud();
             UIManager.Instance.HidePanel(UIManager.Instance.GamePanel);
             OverAnimGo.SetActive(true);
             // AudioManager.Instance.PlayBGM(Music.MainMenuBGM, true); // 全程bgm
@@ -96,9 +98,18 @@ namespace ByteLoop.Manager
             gameObject.transform.SetParent(GameObject.FindGameObjectWithTag("Env").transform);
             RefalshCurrentProductionDialog();
             RefalshCurrentProductionStationRecipe();
+            // 换天：重置锅视觉 + 刷新订单卡 + 提示音
+            PanPresenter.Ensure().ResetVisual();
+            AudioManager.Instance.PlaySfx(SfxType.Clock, 0.8f);
+            var orderPanel = OrderPanel.Ensure();
+            if (orderPanel != null)
+            {
+                orderPanel.gameObject.SetActive(true);
+                orderPanel.Rebuild();
+            }
             yield return new WaitForSeconds(1.5f);
             yield return Fade(0);
-            
+
         }
 
 
@@ -130,6 +141,15 @@ namespace ByteLoop.Manager
                     npc = value;
                     RefalshCurrentProductionDialog();
                     RefalshCurrentProductionStationRecipe();
+                    // 下一位顾客：重置锅视觉 + 刷新订单卡 + 提示音
+                    PanPresenter.Ensure().ResetVisual();
+                    AudioManager.Instance.PlaySfx(SfxType.Give, 0.7f);
+                    var orderPanel = OrderPanel.Ensure();
+                    if (orderPanel != null)
+                    {
+                        orderPanel.gameObject.SetActive(true);
+                        orderPanel.Rebuild();
+                    }
                 }
                 else
                 {
@@ -157,8 +177,17 @@ namespace ByteLoop.Manager
 
         private void Start()
         {
+            // 帧率上限：2D 小游戏 60fps 足够，避免 CPU/GPU 空转发热（WebGL 下同样生效）
+            if (Application.targetFrameRate <= 0 || Application.targetFrameRate > 60)
+            {
+                Application.targetFrameRate = 60;
+            }
             AudioManager.Instance.PlayBGM(Music.MainMenuBGM,true);
             UIManager.Instance.SwitchMainMenuState(true);
+            if (UIManager.Instance.MainMenu != null)
+            {
+                MainMenuEnhancer.Ensure(UIManager.Instance.MainMenu.transform, this);
+            }
         }
 
         public void StartGame()
@@ -176,6 +205,8 @@ namespace ByteLoop.Manager
             Npc = 0;
             // UIManager.Instance.HidePanel(UIManager.Instance.MainMenu);
             UIManager.Instance.SwitchMainMenuState(false);
+            // 显示订单卡与按键提示
+            EnsureGameHud();
             yield return new WaitForSeconds(1f);
             DialogSystemTest.Instance.StartDialog();
             yield return Fade(0);
@@ -196,6 +227,26 @@ namespace ByteLoop.Manager
             {
                 ProductionStation.Instance.CurrentRecipe = npcList[Npc].recipe;
             }
+        }
+
+        // 创建/显示游戏内 HUD（订单卡 + 按键提示）
+        private void EnsureGameHud()
+        {
+            var orderPanel = ByteLoop.UI.OrderPanel.Ensure();
+            if (orderPanel != null)
+            {
+                orderPanel.gameObject.SetActive(true);
+                orderPanel.Rebuild();
+            }
+            var keyHint = ByteLoop.UI.KeyHintBar.Ensure();
+            if (keyHint != null) keyHint.gameObject.SetActive(true);
+        }
+
+        // 返回主菜单时隐藏 HUD
+        public void HideGameHud()
+        {
+            if (ByteLoop.UI.OrderPanel.Instance != null) ByteLoop.UI.OrderPanel.Instance.Hide();
+            if (ByteLoop.UI.KeyHintBar.Instance != null) ByteLoop.UI.KeyHintBar.Instance.Hide();
         }
 
         public bool TodayHasNextNpc()

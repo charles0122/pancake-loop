@@ -52,6 +52,12 @@ namespace ByteLoop.Manager
                 transform = Go.transform.GetChild(i);
                 GameObject.Destroy(transform.gameObject);
             }
+            // Destroy 延迟到帧末执行，下一帧再刷新订单卡
+            Juice.DelayCall(0f, () =>
+            {
+                if (ByteLoop.UI.OrderPanel.Instance != null)
+                    ByteLoop.UI.OrderPanel.Instance.Refresh();
+            });
         }
 
         private void Update()
@@ -62,11 +68,14 @@ namespace ByteLoop.Manager
             }
             if (currentRecipeState == RecipeState.Confirm && Input.GetKeyDown(KeyCode.B) )
             {
+                // 先让锅视觉层接管（折叠→滑出→结果CG），再清锅
+                PanPresenter.Ensure().BeginServe(true);
                 CurrentRecipeState = RecipeState.Success;
                 ClearCurrentProduction();
             }
             else if (currentRecipeState == RecipeState.UnConfirm && Input.GetKeyDown(KeyCode.B) )
             {
+                PanPresenter.Ensure().BeginServe(false);
                 CurrentRecipeState = RecipeState.Fail;
                 ClearCurrentProduction();
             }
