@@ -81,15 +81,21 @@ namespace ByteLoop.Manager
 
         private void LoadSprites()
         {
-            _crepeSprite = Resources.Load<Sprite>("Cook/crepe");
-            _doneSprite = Resources.Load<Sprite>("Cook/pancake_done");
-            _resultGood = Resources.Load<Sprite>("Cook/result_good");
-            _resultBad = Resources.Load<Sprite>("Cook/result_bad");
-            _ladleSprite = Resources.Load<Sprite>("Cook/ladle");
-            _brushSauce = Resources.Load<Sprite>("Cook/brush_sauce");
-            _brushPepper = Resources.Load<Sprite>("Cook/brush_pepper");
-            _eggSplat = Resources.Load<Sprite>("Cook/egg_splat");
-            if (_crepeSprite == null) Debug.LogWarning("PanPresenter: 缺少 Cook/crepe 精灵");
+            var catalog = Resources.Load<CookVisualCatalog>("CookVisualCatalog");
+            if (catalog == null)
+            {
+                Debug.LogError("PanPresenter: 缺少 Resources/CookVisualCatalog 资源");
+                return;
+            }
+
+            _crepeSprite = catalog.crepe;
+            _doneSprite = catalog.pancakeDone;
+            _resultGood = catalog.resultGood;
+            _resultBad = catalog.resultBad;
+            _ladleSprite = catalog.ladle;
+            _brushSauce = catalog.brushSauce;
+            _brushPepper = catalog.brushPepper;
+            _eggSplat = catalog.eggSplat;
         }
 
         private void BuildRig()

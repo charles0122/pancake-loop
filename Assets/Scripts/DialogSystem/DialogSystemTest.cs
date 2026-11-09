@@ -16,7 +16,7 @@ public class DialogSystemTest : PersistentMonoSingleton<DialogSystemTest>
 
     public void Next(bool forceDisplayDirectly)
     {
-        AudioManager.Instance.Play((Music)(GameManager.Instance.Npc+2));
+        AudioManager.Instance.PlayNpcVoice(GameManager.Instance.Npc);
         _dialogBox._nextCursor.GetComponent<Image>().sprite =  GameManager.Instance.npcList[GameManager.Instance.Npc].RoleAvatar;
         _dialogBox.StartCoroutine(_dialogBox.PrintDialog(
             datas[_index].Content,

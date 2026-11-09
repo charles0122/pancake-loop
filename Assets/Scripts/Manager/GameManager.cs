@@ -85,6 +85,7 @@ namespace ByteLoop.Manager
             AudioManager.Instance.Stop();
             // 延迟 2s返回主界面
             yield return new WaitForSeconds(2f);
+            _gameStarting = false;
             UIManager.Instance.SwitchMainMenuState(true);
         }
 
@@ -182,7 +183,6 @@ namespace ByteLoop.Manager
             {
                 Application.targetFrameRate = 60;
             }
-            AudioManager.Instance.PlayBGM(Music.MainMenuBGM,true);
             UIManager.Instance.SwitchMainMenuState(true);
             if (UIManager.Instance.MainMenu != null)
             {
@@ -190,11 +190,14 @@ namespace ByteLoop.Manager
             }
         }
 
+        private bool _gameStarting;
+
         public void StartGame()
         {
-
+            if (_gameStarting || isFade) return;
+            _gameStarting = true;
+            Application.runInBackground = true;
             StartCoroutine(StartGameRoutine());
-
         }
 
         IEnumerator StartGameRoutine()
@@ -210,6 +213,8 @@ namespace ByteLoop.Manager
             yield return new WaitForSeconds(1f);
             DialogSystemTest.Instance.StartDialog();
             yield return Fade(0);
+            AudioManager.Instance.PlayBGM(true);
+            Application.runInBackground = false;
             
 
             // test

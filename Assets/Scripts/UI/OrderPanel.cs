@@ -34,22 +34,6 @@ namespace ByteLoop.UI
             return Instance;
         }
 
-        private static readonly Dictionary<MaterialType, string> IconPaths = new Dictionary<MaterialType, string>
-        {
-            { MaterialType.Egg, "Cook/icon_egg" },
-            { MaterialType.Pepper, "Cook/icon_pepper" },
-            { MaterialType.Sauce, "Cook/icon_sauce" },
-            { MaterialType.Sausage, "Cook/icon_sausage" },
-            { MaterialType.Sesame, "Cook/icon_sesame" },
-            { MaterialType.Coriander, "Cook/icon_coriander" },
-            { MaterialType.Onion, "Cook/icon_onion" },
-            { MaterialType.RemaineLettuce, "Cook/icon_lettuce" },
-            { MaterialType.Flour, "Cook/icon_flour" },
-            { MaterialType.Meat, "Cook/icon_meat" },
-            { MaterialType.Oil, "Cook/icon_oil" },
-            { MaterialType.Crisp, "Cook/icon_crisp" },
-        };
-
         private static readonly Color PanelColor = new Color(0.12f, 0.09f, 0.07f, 0.78f);
         private static readonly Color ItemMissingColor = new Color(0.62f, 0.62f, 0.62f, 0.55f);
         private static readonly Color ItemDoneColor = new Color(1f, 0.95f, 0.75f);
@@ -64,6 +48,7 @@ namespace ByteLoop.UI
         private readonly List<ItemView> _items = new List<ItemView>();
 
         private TMP_FontAsset _font;
+        private CookVisualCatalog _catalog;
         private bool _flashRunning;
 
         private class ItemView
@@ -78,6 +63,7 @@ namespace ByteLoop.UI
         {
             Instance = this;
             _font = GrabFont();
+            _catalog = Resources.Load<CookVisualCatalog>("CookVisualCatalog");
             Build();
             gameObject.SetActive(false); // 开局隐藏，进入游戏后再显示
         }
@@ -185,9 +171,9 @@ namespace ByteLoop.UI
                 var icon = iconGo.AddComponent<Image>();
                 icon.preserveAspect = true;
                 icon.raycastTarget = false;
-                if (IconPaths.TryGetValue(item.materialTypes, out var path))
+                if (_catalog != null)
                 {
-                    icon.sprite = Resources.Load<Sprite>(path);
+                    icon.sprite = _catalog.GetIcon(item.materialTypes);
                 }
                 var iconRt = (RectTransform)iconGo.transform;
                 iconRt.anchorMin = iconRt.anchorMax = new Vector2(0.5f, 1f);

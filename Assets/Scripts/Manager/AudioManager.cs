@@ -1,22 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
-using ByteLoop.Manager;
 using ByteLoop.Tool;
-using System;
 using UnityEngine;
 
-public class AudioManager :PersistentMonoSingleton<AudioManager>
+public class AudioManager : PersistentMonoSingleton<AudioManager>
 {
-    [SerializeField] public AudioClip[] audioClips;
-    // public Dictionary<string,AudioClip> audioDic = new Dictionary<string, AudioClip>();
+    [Header("音乐与角色语音")]
+    [SerializeField] private AudioClip bgmClip;
+    [SerializeField] private AudioClip[] npcVoiceClips;
     [SerializeField] public AudioSource audioSource;
 
-    // 音效独立通道，不与 BGM/语音共用
     private AudioSource _sfxSource;
     private AudioSource _loopSource;
     private readonly Dictionary<SfxType, AudioClip> _sfxClips = new Dictionary<SfxType, AudioClip>();
-
-    private AudioListener audioListener;
 
     protected override void Awake()
     {
@@ -24,12 +20,13 @@ public class AudioManager :PersistentMonoSingleton<AudioManager>
         InitSfx();
     }
 
-    // —— 音效：全部来自 Resources/Sound Effect，之前没有接 ——
     private void InitSfx()
     {
         if (_sfxSource != null) return;
+
         _sfxSource = gameObject.AddComponent<AudioSource>();
         _sfxSource.playOnAwake = false;
+
         _loopSource = gameObject.AddComponent<AudioSource>();
         _loopSource.playOnAwake = false;
         _loopSource.loop = true;
@@ -42,7 +39,6 @@ public class AudioManager :PersistentMonoSingleton<AudioManager>
         LoadSfx(SfxType.Clock, "Sound Effect/Clock");
         LoadSfx(SfxType.UiClick, "Sound Effect/Turn UI");
         LoadSfx(SfxType.MenuClick, "Sound Effect/Turn Menu");
-        LoadSfx(SfxType.Whoosh, "Sound Effect/Run");
     }
 
     private void LoadSfx(SfxType type, string path)
@@ -50,6 +46,55 @@ public class AudioManager :PersistentMonoSingleton<AudioManager>
         var clip = Resources.Load<AudioClip>(path);
         if (clip != null) _sfxClips[type] = clip;
         else Debug.LogWarning("音效缺失: " + path);
+    }
+
+    public void PlayNpcVoice(int npcIndex)
+    {
+        if (audioSource == null || npcVoiceClips == null) return;
+        if (npcIndex < 0 || npcIndex >= npcVoiceClips.Length) return;
+
+        var clip = npcVoiceClips[npcIndex];
+        if (clip != null) audioSource.PlayOneShot(clip);
+    }
+
+    public void PlayBGM(bool loop = true)
+    {
+        if (audioSource == null || bgmClip == null) return;
+        StartCoroutine(PlayBgmWhenReady(loop));
+    }
+
+    private IEnumerator PlayBgmWhenReady(bool loop)
+    {
+        // Streaming 音频由平台边播边解码，不调用 LoadAudioData，避免 WebGL 主线程阻塞。
+        if (bgmClip.loadType == AudioClipLoadType.Streaming)
+        {
+            audioSource.clip = bgmClip;
+            audioSource.loop = loop;
+            audioSource.Play();
+            yield break;
+        }
+
+        if (bgmClip.loadState == AudioDataLoadState.Unloaded)
+        {
+            bgmClip.LoadAudioData();
+        }
+
+        float timeout = 10f;
+        while (bgmClip.loadState == AudioDataLoadState.Loading && timeout > 0f)
+        {
+            timeout -= Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (bgmClip.loadState != AudioDataLoadState.Loaded)
+        {
+            Debug.LogWarning("BGM 加载失败，游戏继续运行。", this);
+            yield break;
+        }
+
+        audioSource.clip = bgmClip;
+        audioSource.loop = loop;
+        audioSource.Play();
     }
 
     public void PlaySfx(SfxType type, float volume = 1f)
@@ -61,7 +106,6 @@ public class AudioManager :PersistentMonoSingleton<AudioManager>
         }
     }
 
-    /// <summary>循环音效（锅里的滋滋声），重复调用只保留一路。</summary>
     public void PlaySfxLoop(SfxType type, float volume = 0.4f)
     {
         if (_loopSource == null) return;
@@ -78,63 +122,21 @@ public class AudioManager :PersistentMonoSingleton<AudioManager>
         if (_loopSource != null) _loopSource.Stop();
     }
 
-    public void Play(Music music){
-        if(audioSource==null) return;
-        // AudioClip audioClip = Resources.Load<AudioClip>(name);
-        // audioSource.clip = audioClip;
-        // audioSource.Play();
-        audioSource.PlayOneShot(audioClips[(int)music]);
+    public void Stop()
+    {
+        if (audioSource != null) audioSource.Stop();
+        StopSfxLoop();
     }
-
-// 
-    public void PlayBGM(Music music,bool loop){
-        // Debug.Log(bgmName);
-        if(audioSource==null) return;
-        AudioClip audioClip = audioClips[(int)music];
-        Debug.Log(audioClip);
-        audioSource.clip = audioClip;
-        audioSource.loop = loop;
-        audioSource.Play();
-    }
-
-    private void CheckAudioListener(){
-        if(audioListener==null){
-            this.gameObject.AddComponent<AudioListener>();
-        }
-    }
-    public void Stop(){
-        if(audioSource==null) return;
-        audioSource.Stop();
-    }
-
-
-   
-
-
-
 }
 
- public  enum Music{
-        None=-1,
-        MainMenuBGM = 0,
-        MenuBGM =1,
-        Fifth=2,
-        First=3,
-        Fourth=4,
-        Second=5,
-        Third=6,
-    }
-
-/// <summary>游戏内音效枚举，与 Resources/Sound Effect 下的素材一一对应</summary>
 public enum SfxType
 {
-    PourBatter,  // 倒面糊（Fire）
-    Sizzle,      // 煎制滋滋声（Fried，循环）
-    EggBreak,    // 打鸡蛋
-    Coin,        // 收钱（上餐成功）
-    Give,        // 递餐/下一位顾客
-    Clock,       // 计时滴答/换天
-    UiClick,     // UI 点击
-    MenuClick,   // 菜单点击
-    Whoosh,      // 过场呼啸（Run）
+    PourBatter,
+    Sizzle,
+    EggBreak,
+    Coin,
+    Give,
+    Clock,
+    UiClick,
+    MenuClick,
 }

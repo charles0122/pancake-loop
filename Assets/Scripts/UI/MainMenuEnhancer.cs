@@ -46,12 +46,8 @@ namespace ByteLoop.UI
             colors.pressedColor = new Color(0.84f, 0.78f, 0.68f, 1f);
             colors.selectedColor = colors.highlightedColor;
             button.colors = colors;
-            button.onClick.AddListener(() =>
-            {
-                if (!button.interactable) return;
-                button.interactable = false;
-                gameManager.StartGame();
-            });
+            button.onClick.AddListener(gameManager.StartGame);
+            buttonGo.AddComponent<MainMenuStartButton>();
             buttonGo.AddComponent<UIButtonJuice>();
 
             var font = FindFont();

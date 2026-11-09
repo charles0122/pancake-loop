@@ -6,7 +6,7 @@
 
 GitHub Pages：<https://charles0122.github.io/pancake-loop/>
 
-> 网页版首次打开需要下载并初始化约 30 MB 的 WebGL 内容。点击游戏画布后开始运行；切换到其他标签页时游戏会自动暂停，以降低功耗。
+> 网页版首次打开需要下载并初始化约 18 MB 的 WebGL 内容（由原约 29 MB 优化而来）。首次加载后浏览器会缓存资源；切换到其他标签页时游戏会自动暂停，以降低功耗。
 
 ## 操作方式
 
@@ -23,7 +23,8 @@ GitHub Pages：<https://charles0122.github.io/pancake-loop/>
 - 接入煎制、鸡蛋、计时、上餐、金币与 UI 音效
 - 增加清晰的主菜单“开始营业”入口
 - 升级旧 Unity 2020 包至 Unity 6000.3 兼容版本
-- 限制 60 FPS、失焦暂停、WebGL 低功耗 GPU 偏好，并移除 UI 轮询热路径
+- WebGL 首次下载从约 29 MB 优化至约 18 MB：移除未使用音频、裁短烹饪音效、去重精灵、清理字体缓存，并启用 IL2CPP Optimize Size / LTO
+- 限制 60 FPS、稳定画面失焦暂停、WebGL 低功耗 GPU 偏好，并移除 UI 轮询热路径
 - 提供 GitHub Pages 可直接部署的 WebGL 构建
 
 ## 开发环境

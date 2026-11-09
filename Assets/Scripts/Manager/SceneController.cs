@@ -4,7 +4,6 @@ using ByteLoop.Tool;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using Unity.Mathematics;
 
 namespace ByteLoop.Manager
 {
@@ -26,20 +25,20 @@ namespace ByteLoop.Manager
 
         private IEnumerator Start()
         {
+            // WebGL 首次进入时必须让场景加载与淡入完整执行；淡入完成后立即恢复失焦暂停。
+            Application.runInBackground = true;
             faderImage.color = new Color(0f, 0f, 0f, 1f);
-            // faderCanvasGroup.alpha = 1;
-            yield return StartCoroutine(LoadSceneAndSetActive(StartingSceneName.ToString()));
+            yield return StartCoroutine(LoadSceneAndSetActive(StartingSceneName));
             EventCenter.CallAfterSceneloadEvent();
-     
-            StartCoroutine(Fade(0f));
-
+            yield return StartCoroutine(Fade(0f));
+            Application.runInBackground = false;
         }
         private IEnumerator Fade(float finalAlpha)
         {
             isFading = true;
             faderCanvasGroup.blocksRaycasts = true;
 
-            float fadeSpeed = math.abs(faderCanvasGroup.alpha - finalAlpha) / fadeDuration;
+            float fadeSpeed = Mathf.Abs(faderCanvasGroup.alpha - finalAlpha) / fadeDuration;
             while (!Mathf.Approximately(faderCanvasGroup.alpha, finalAlpha))
             {
                 faderCanvasGroup.alpha = Mathf.MoveTowards(faderCanvasGroup.alpha, finalAlpha, fadeSpeed * Time.deltaTime);

@@ -1290,9 +1290,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dfbdb8fb26b07743a548fd719c20617, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  audioClips:
-  - {fileID: 8300000, guid: 5c60df694de129242ad4e90c259cb82a, type: 3}
-  - {fileID: 8300000, guid: 30fa1b5d7f0bd7844a2a08b43ba7b2e7, type: 3}
+  bgmClip: {fileID: 8300000, guid: 5c60df694de129242ad4e90c259cb82a, type: 3}
+  npcVoiceClips:
   - {fileID: 8300000, guid: d0d9444e61423a74e8638d7c2cda89c5, type: 3}
   - {fileID: 8300000, guid: fb5450bf9db86444f9ef726e0a4ce5b7, type: 3}
   - {fileID: 8300000, guid: 3401ef8516da561479dacb8c79abbb6f, type: 3}
